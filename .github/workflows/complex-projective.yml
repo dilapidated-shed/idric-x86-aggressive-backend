@@ -14,8 +14,7 @@ env:
 
 jobs:
   direct-complex-projective:
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: [self-hosted, linux, debian]
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - name: Check out x86 backend
