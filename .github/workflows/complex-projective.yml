@@ -17,8 +17,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - name: Check out x86 backend
+      - name: Check out exact x86 backend head
         uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SOURCE_HEAD_SHA }}
+          fetch-depth: 0
 
       - name: Check out canonical complex/projective corpus
         uses: actions/checkout@v4
@@ -37,14 +40,20 @@ jobs:
           persist-credentials: false
 
       - name: Record exact canonical semantic head
-        run: echo "IDRIC_COMPLEX_SEMANTICS_SHA=$(git -C .idric-complex rev-parse HEAD)" >> "$GITHUB_ENV"
+        run: |
+          echo "IDRIC_COMPLEX_SEMANTICS_SHA=$(git -C .idric-complex rev-parse HEAD)" >> "$GITHUB_ENV"
+          test "$(git rev-parse HEAD)" = "$SOURCE_HEAD_SHA"
 
       - name: Check generator syntax and existing backend unit tests
         run: |
-          python3 -m py_compile backend/complex_projective.py scripts/run_complex_projective_acceptance.py
+          python3 -m py_compile \
+            backend/complex_projective.py \
+            backend/complex_projective_contract.py \
+            scripts/run_complex_projective_acceptance.py \
+            scripts/complex_projective_contract_acceptance.py
           make unit
 
-      - name: Generate direct ELF64 numerical and render receipts
+      - name: Generate and directly execute exact-head ELF64 candidates
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -53,16 +62,18 @@ jobs:
             --artifacts build/complex-projective \
             --backend-sha "$SOURCE_HEAD_SHA" \
             --idric-sha "$IDRIC_COMPLEX_SEMANTICS_SHA"
-          if readelf -l build/complex-projective/complex-corpus.elf | grep -q INTERP; then
-            echo 'complex corpus ELF unexpectedly has a dynamic interpreter' >&2
-            exit 1
-          fi
-          if readelf -l build/complex-projective/complex-render.elf | grep -q INTERP; then
-            echo 'render ELF unexpectedly has a dynamic interpreter' >&2
-            exit 1
-          fi
+          for executable in \
+            complex-corpus.elf \
+            complex-projective-contract.elf \
+            complex-render.elf
+          do
+            if readelf -l "build/complex-projective/$executable" | grep -q INTERP; then
+              echo "$executable unexpectedly has a dynamic interpreter" >&2
+              exit 1
+            fi
+          done
 
-      - name: Execute the same direct ELFs on thin Debian
+      - name: Execute the exact generated ELFs in thin Debian
         run: scripts/run_complex_projective_thin_debian.sh build/complex-projective
 
       - name: Verify leader evidence claims against merged policy
