@@ -183,19 +183,36 @@ threshold = max(1000, peak // 8)
 active_indices = [i for i, value in enumerate(mono) if abs(value) >= threshold]
 if not active_indices:
     raise SystemExit("FAIL: no active captured audio")
-start = active_indices[0]
-stop = active_indices[-1] + 1
+
+# Ignore isolated QEMU/device startup and shutdown clicks. Build clusters of
+# threshold-crossing samples, allowing up to 20 ms between active samples, and
+# analyze the cluster containing the most actual active samples.
+max_gap = max(1, rate // 50)
+clusters = []
+start = previous = active_indices[0]
+active_count = 1
+for index in active_indices[1:]:
+    if index - previous > max_gap:
+        clusters.append((active_count, start, previous + 1))
+        start = index
+        active_count = 1
+    else:
+        active_count += 1
+    previous = index
+clusters.append((active_count, start, previous + 1))
+active_count, start, stop = max(clusters)
 active = mono[start:stop]
 duration = len(active) / rate
 if not 0.18 <= duration <= 0.40:
-    raise SystemExit(f"FAIL: active tone duration {duration:.6f}s is outside expected range")
+    raise SystemExit(f"FAIL: dominant tone duration {duration:.6f}s is outside expected range")
 
 mean = sum(active) / len(active)
 signs = [1 if value >= mean else -1 for value in active]
 crossings = sum(a != b for a, b in zip(signs, signs[1:]))
 frequency = crossings * rate / (2 * len(active))
 print(f"captured_rate={rate} channels={channels} peak={peak}")
-print(f"active_duration_seconds={duration:.6f}")
+print(f"dominant_active_samples={active_count}")
+print(f"dominant_duration_seconds={duration:.6f}")
 print(f"estimated_frequency_hz={frequency:.3f}")
 if not 350 <= frequency <= 450:
     raise SystemExit("FAIL: captured tone frequency is outside the 400 Hz fixture window")
