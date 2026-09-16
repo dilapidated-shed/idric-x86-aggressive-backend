@@ -7,38 +7,37 @@ repo_root=$(CDPATH= cd -- "$script_dir/../.." && pwd)
 UBUNTU_SUITE=${UBUNTU_SUITE:-noble}
 UBUNTU_MIRROR=${UBUNTU_MIRROR:-http://archive.ubuntu.com/ubuntu}
 QEMU=${QEMU:-qemu-system-x86_64}
+CC=${CC:-cc}
 
 work=${WORK_DIR:-"$repo_root/build/full-system-x86-speaker"}
 rootfs="$work/rootfs"
 disk="$work/ubuntu-x86-64.raw"
 serial="$work/serial.log"
 audio="$work/tone.wav"
-program="$work/speaker-tone-x86-64.elf"
-object="$work/speaker-tone-x86-64.o"
+program="$work/speaker-tone-alsa"
 kernel="$work/vmlinuz"
 initrd="$work/initrd.img"
 
 rm -rf "$work"
 mkdir -p "$work"
 
-for command in debootstrap mkfs.ext4 python3 "$QEMU" as ld; do
+for command in debootstrap mkfs.ext4 python3 "$QEMU" "$CC"; do
     command -v "$command" >/dev/null 2>&1 || {
         printf 'FAIL: required command not found: %s\n' "$command" >&2
         exit 1
     }
 done
 
-as --64 -o "$object" "$script_dir/speaker-tone-x86-64.s"
-ld -m elf_x86_64 -nostdlib --build-id=none -s -e _start \
-    -o "$program" "$object"
+"$CC" -std=c11 -Wall -Wextra -Werror -O2 \
+    "$script_dir/speaker-tone-alsa.c" -lasound -o "$program"
 
 sudo debootstrap \
     --variant=minbase \
     --components=main,universe \
-    --include=linux-image-generic,kmod,busybox-static,initramfs-tools \
+    --include=linux-image-generic,kmod,busybox-static,initramfs-tools,libasound2t64 \
     "$UBUNTU_SUITE" "$rootfs" "$UBUNTU_MIRROR"
 
-sudo install -m 0755 "$program" "$rootfs/usr/local/bin/speaker-tone"
+sudo install -m 0755 "$program" "$rootfs/usr/local/bin/speaker-tone-alsa"
 
 sudo tee "$rootfs/usr/local/sbin/device-action-init" >/dev/null <<'GUEST_INIT'
 #!/bin/busybox sh
@@ -50,26 +49,26 @@ exec </dev/console >/dev/console 2>&1
 /bin/busybox mount -t sysfs sysfs /sys 2>/dev/null || true
 
 /sbin/modprobe snd-intel8x0 2>/dev/null || /sbin/modprobe snd_intel8x0 2>/dev/null || true
-/sbin/modprobe snd-pcm-oss 2>/dev/null || /sbin/modprobe snd_pcm_oss 2>/dev/null || true
 
 i=0
-while [ ! -e /dev/dsp ] && [ "$i" -lt 20 ]; do
+while [ ! -e /dev/snd/pcmC0D0p ] && [ "$i" -lt 20 ]; do
     /bin/busybox sleep 1
     i=$((i + 1))
 done
 
-if [ ! -e /dev/dsp ]; then
-    echo 'AUDIO_DEVICE_PRESENT=0'
+if [ ! -e /dev/snd/pcmC0D0p ]; then
+    echo 'ALSA_PCM_PRESENT=0'
     echo 'PROGRAM_STATUS=125'
     cat /proc/asound/cards 2>/dev/null || true
+    find /dev/snd -maxdepth 1 -type c -print 2>/dev/null || true
     /bin/busybox poweroff -f
     /bin/busybox sleep 5
     exit 125
 fi
 
-echo 'AUDIO_DEVICE_PRESENT=1'
+echo 'ALSA_PCM_PRESENT=1'
 echo 'SPEAKER_TONE_RUNNING=1'
-/usr/local/bin/speaker-tone
+/usr/local/bin/speaker-tone-alsa plughw:0,0
 status=$?
 echo "PROGRAM_STATUS=$status"
 cat /proc/asound/cards 2>/dev/null || true
@@ -149,7 +148,7 @@ cleanup_qemu
 trap - EXIT HUP INT TERM
 
 cat "$serial"
-grep -q 'AUDIO_DEVICE_PRESENT=1' "$serial"
+grep -q 'ALSA_PCM_PRESENT=1' "$serial"
 grep -q 'PROGRAM_STATUS=0' "$serial"
 
 python3 - "$audio" <<'PY'
@@ -185,9 +184,6 @@ active_indices = [i for i, value in enumerate(mono) if abs(value) >= threshold]
 if not active_indices:
     raise SystemExit("FAIL: no active captured audio")
 
-# Ignore isolated QEMU/device startup and shutdown clicks. Build clusters of
-# threshold-crossing samples, allowing up to 20 ms between active samples, and
-# analyze the cluster containing the most actual active samples.
 max_gap = max(1, rate // 50)
 clusters = []
 start = previous = active_indices[0]
@@ -220,6 +216,6 @@ if not 350 <= frequency <= 450:
 PY
 
 printf '%s\n' \
-    'PASS: native x86-64 ELF executed through an Ubuntu guest audio device' \
-    'PASS: guest exposed /dev/dsp through the Linux audio stack' \
+    'PASS: native x86-64 ALSA program executed through an Ubuntu guest audio device' \
+    'PASS: guest exposed the AC97 playback PCM through the supported ALSA stack' \
     'PASS: QEMU WAV capture contains the expected bounded ~400 Hz tone'
