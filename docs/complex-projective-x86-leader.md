@@ -77,7 +77,7 @@ The x86 lane requires deterministic same-backend regeneration. The corpus explic
 
 The GitHub-hosted job runs on Ubuntu x86-64 and checks out the exact PR head rather than the synthetic pull-request merge ref. It records the exact backend head, exact Idriç semantic/corpus SHA, corpus SHA-256, every generated ELF SHA-256, the numerical output hashes, the three exponential bounds, and the render SHA-256.
 
-The same generated ELFs are then executed inside unmodified `debian:13-slim`. Debian is an inner thin-runtime check only; it is not the GitHub Actions host.
+The generated ELFs are executed directly on that Ubuntu host. Ubuntu execution is the maintained Linux acceptance boundary. Historical Debian receipts may remain as historical evidence, but Debian is not an additional required runtime or acceptance gate.
 
 The final receipt keeps detailed executed stages for:
 
@@ -89,7 +89,6 @@ The final receipt keeps detailed executed stages for:
 - CP¹ infinity / undefined first chart;
 - bounded complex exponential;
 - deterministic `R(z) exp(q(z))` render;
-- semantic discriminator rejection;
-- thin runtime execution.
+- semantic discriminator rejection.
 
-The merged ai-ci v1 policy still requires aggregate `numerical_corpus`, `projective_corpus`, and `headless_render` stage names. Those aggregate entries are emitted only after the detailed subcases have passed; they are not substitutes for the detailed evidence.
+The current ai-ci v1 policy requires aggregate `native_execution`, `numerical_corpus`, `projective_corpus`, and `headless_render` stage names. Those aggregate entries are emitted only after the detailed subcases have passed; they are not substitutes for the detailed evidence.
