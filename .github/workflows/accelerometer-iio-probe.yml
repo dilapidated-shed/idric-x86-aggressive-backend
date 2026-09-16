@@ -1,0 +1,28 @@
+name: Ubuntu IIO accelerometer capability probe
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  full-system-iio-probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install guest-build and system-emulation tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y debootstrap e2fsprogs qemu-system-x86
+      - name: Probe Noble IIO dummy accelerometer capabilities
+        run: sh examples/accelerometer/probe-full-system-ubuntu.sh
+      - name: Retain probe receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-system-x86-accelerometer-iio-probe
+          path: build/full-system-x86-accelerometer-probe/serial.log
+          if-no-files-found: warn
