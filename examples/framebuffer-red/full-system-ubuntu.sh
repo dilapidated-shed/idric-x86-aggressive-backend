@@ -36,19 +36,19 @@ ld -m elf_x86_64 -nostdlib --build-id=none -s \
 
 sudo debootstrap \
     --variant=minbase \
-    --include=linux-image-generic,kmod,busybox \
+    --include=linux-image-generic,kmod \
     "$UBUNTU_SUITE" "$rootfs" "$UBUNTU_MIRROR"
 
 sudo install -m 0755 "$program" "$rootfs/usr/local/bin/screen-red"
 
 sudo tee "$rootfs/usr/local/sbin/device-action-init" >/dev/null <<'GUEST_INIT'
-#!/bin/busybox sh
+#!/bin/sh
 
 exec </dev/console >/dev/console 2>&1
 
-/bin/busybox mount -t devtmpfs devtmpfs /dev 2>/dev/null || true
-/bin/busybox mount -t proc proc /proc 2>/dev/null || true
-/bin/busybox mount -t sysfs sysfs /sys 2>/dev/null || true
+/bin/mount -t devtmpfs devtmpfs /dev 2>/dev/null || true
+/bin/mount -t proc proc /proc 2>/dev/null || true
+/bin/mount -t sysfs sysfs /sys 2>/dev/null || true
 
 for module in bochs bochs_drm simpledrm vesafb; do
     /sbin/modprobe "$module" 2>/dev/null || true
@@ -56,15 +56,15 @@ done
 
 i=0
 while [ ! -e /dev/fb0 ] && [ "$i" -lt 20 ]; do
-    /bin/busybox sleep 1
+    /bin/sleep 1
     i=$((i + 1))
 done
 
 if [ ! -e /dev/fb0 ]; then
     echo 'FBDEV_PRESENT=0'
     echo 'PROGRAM_STATUS=125'
-    /bin/busybox poweroff -f
-    /bin/busybox sleep 5
+    /sbin/poweroff -f 2>/dev/null || true
+    /bin/sleep 5
     exit 125
 fi
 
@@ -73,9 +73,9 @@ echo 'SCREEN_RED_RUNNING=1'
 /usr/local/bin/screen-red
 status=$?
 echo "PROGRAM_STATUS=$status"
-/bin/busybox sync
-/bin/busybox poweroff -f
-/bin/busybox sleep 5
+/bin/sync
+/sbin/poweroff -f 2>/dev/null || true
+/bin/sleep 5
 exit "$status"
 GUEST_INIT
 sudo chmod 0755 "$rootfs/usr/local/sbin/device-action-init"
