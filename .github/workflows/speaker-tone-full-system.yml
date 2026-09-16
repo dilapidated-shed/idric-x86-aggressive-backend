@@ -18,7 +18,7 @@ jobs:
       - name: Install guest-build and system-emulation tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y debootstrap e2fsprogs qemu-system-x86
+          sudo apt-get install -y debootstrap e2fsprogs libasound2-dev qemu-system-x86
 
       - name: Boot Ubuntu and capture native speaker output
         run: sh examples/speaker-tone/full-system-ubuntu.sh
