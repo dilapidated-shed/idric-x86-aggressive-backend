@@ -12,7 +12,7 @@ work=${WORK_DIR:-"$repo_root/build/full-system-x86-red"}
 rootfs="$work/rootfs"
 disk="$work/debian-x86-64.raw"
 serial="$work/serial.log"
-monitor="$work/monitor.sock"
+monitor="${TMPDIR:-/tmp}/idric-x86-red-$$.sock"
 screen="$work/red.ppm"
 program="$work/framebuffer-red-x86-64.elf"
 object="$work/framebuffer-red-x86-64.o"
@@ -118,6 +118,7 @@ cleanup_qemu() {
         kill "$qemu_pid" 2>/dev/null || true
         wait "$qemu_pid" 2>/dev/null || true
     fi
+    rm -f "$monitor"
 }
 trap cleanup_qemu EXIT HUP INT TERM
 
