@@ -36,7 +36,7 @@ ld -m elf_x86_64 -nostdlib --build-id=none -s \
 
 sudo debootstrap \
     --variant=minbase \
-    --include=linux-image-generic,kmod \
+    --include=linux-image-generic,kmod,initramfs-tools \
     "$UBUNTU_SUITE" "$rootfs" "$UBUNTU_MIRROR"
 
 sudo install -m 0755 "$program" "$rootfs/usr/local/bin/screen-red"
