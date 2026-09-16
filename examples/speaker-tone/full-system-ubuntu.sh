@@ -35,7 +35,7 @@ ld -m elf_x86_64 -nostdlib --build-id=none -s -e _start \
 sudo debootstrap \
     --variant=minbase \
     --components=main,universe \
-    --include=linux-image-generic,kmod,busybox-static \
+    --include=linux-image-generic,kmod,busybox-static,initramfs-tools \
     "$UBUNTU_SUITE" "$rootfs" "$UBUNTU_MIRROR"
 
 sudo install -m 0755 "$program" "$rootfs/usr/local/bin/speaker-tone"
