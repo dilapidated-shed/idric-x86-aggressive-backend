@@ -92,7 +92,7 @@ sudo cp "$kernel_source" "$kernel"
 sudo cp "$initrd_source" "$initrd"
 sudo chown "$(id -u):$(id -g)" "$kernel" "$initrd"
 
-truncate -s 1G "$disk"
+truncate -s 2G "$disk"
 sudo mkfs.ext4 -q -d "$rootfs" "$disk"
 sudo chown "$(id -u):$(id -g)" "$disk"
 
