@@ -20,8 +20,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y debootstrap e2fsprogs qemu-system-x86
 
-      - name: Boot Debian and capture the presented red display
-        run: sh examples/framebuffer-red/full-system-debian.sh
+      - name: Boot Ubuntu and capture the presented red display
+        run: sh examples/framebuffer-red/full-system-ubuntu.sh
 
       - name: Retain guest receipt
         if: always()
