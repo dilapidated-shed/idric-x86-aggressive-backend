@@ -31,6 +31,9 @@ jobs:
           IDRIC_X86_ARTIFACTS_DIR: ${{ github.workspace }}/build/checked-x86
         run: scripts/run_current_head_ci.sh
 
+      - name: Build and execute framebuffer-red oracle boundary
+        run: sh examples/framebuffer-red/check.sh
+
       - name: Retain compiler/backend/ELF/native evidence
         if: always()
         uses: actions/upload-artifact@v4
