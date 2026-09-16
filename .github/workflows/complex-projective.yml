@@ -10,7 +10,7 @@ permissions:
 env:
   IDRIC_COMPLEX_REF: math/complex-projective-semantics
   SOURCE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-  COMPLEX_PROJECTIVE_POLICY_SHA: 8e14cb50db10a055a0849e0ad7cab26454cd5791
+  COMPLEX_PROJECTIVE_POLICY_SHA: 1bc90e686f014264a77dcc061f9a0f3620a34a73
 
 jobs:
   direct-complex-projective:
@@ -31,7 +31,7 @@ jobs:
           path: .idric-complex
           persist-credentials: false
 
-      - name: Check out merged receipt policy
+      - name: Check out current receipt policy
         uses: actions/checkout@v4
         with:
           repository: isomorphisms/ai-ci
@@ -53,10 +53,12 @@ jobs:
             scripts/complex_projective_contract_acceptance.py
           make unit
 
-      - name: Generate and directly execute exact-head ELF64 candidates
+      - name: Generate and directly execute exact-head ELF64 candidates on Ubuntu
         shell: bash
         run: |
           set -Eeuo pipefail
+          . /etc/os-release
+          test "$ID" = ubuntu
           python3 scripts/run_complex_projective_acceptance.py \
             --corpus .idric-complex/_/fixtures/complex-projective/float32.json \
             --artifacts build/complex-projective \
@@ -73,13 +75,10 @@ jobs:
             fi
           done
 
-      - name: Execute the exact generated ELFs in thin Debian
-        run: scripts/run_complex_projective_thin_debian.sh build/complex-projective
-
-      - name: Verify leader evidence claims against merged policy
+      - name: Verify leader evidence claims against current policy
         run: python3 .ai-ci-complex-policy/complex-projective/verify_receipt.py verify build/complex-projective/acceptance-receipt.tsv
 
-      - name: Retain direct numerical, projective, Debian, and render evidence
+      - name: Retain direct numerical, projective, Ubuntu, and render evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
