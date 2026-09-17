@@ -1,4 +1,4 @@
-name: Checked Idric to direct x86-64 ELF64
+name: Checked Idriç to direct x86-64 ELF64
 
 on:
   push:
