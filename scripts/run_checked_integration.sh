@@ -111,4 +111,4 @@ DirectCall.idric 29
 RegisterPressure.idric 15
 FIXTURES
 
-printf 'checked Idric to direct x86-64 ELF64: PASS\n'
+printf 'checked Idriç to direct x86-64 ELF64: PASS\n'
