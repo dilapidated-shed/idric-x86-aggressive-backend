@@ -1,0 +1,60 @@
+name: Temporary Idriç terminology repair
+
+on:
+  push:
+    branches:
+      - docs/idric-terminology-audit
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: docs/idric-terminology-audit
+          fetch-depth: 0
+
+      - name: Correct human-facing backend prose and remove this workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          replacements = {
+              '.github/workflows/direct-elf64.yml': [
+                  ('name: Checked Idric to direct x86-64 ELF64', 'name: Checked Idriç to direct x86-64 ELF64'),
+              ],
+              'docs/checked-x86-baseline.md': [
+                  ('the current declared Idric ref `Idriç`', 'the current declared `isomorphisms/Idric` ref `Idriç`'),
+              ],
+              'research/vendor-differences.tsv': [
+                  ('The current Idric Linux x86-64 path may use SYSCALL', 'The current Idriç Linux x86-64 path may use SYSCALL'),
+              ],
+              'scripts/run_checked_integration.sh': [
+                  ('checked Idric to direct x86-64 ELF64: PASS', 'checked Idriç to direct x86-64 ELF64: PASS'),
+              ],
+          }
+          for name, pairs in replacements.items():
+              path = Path(name)
+              text = path.read_text()
+              original = text
+              for old, new in pairs:
+                  if old not in text:
+                      raise SystemExit(f'expected text not found in {name}: {old!r}')
+                  text = text.replace(old, new)
+              if text == original:
+                  raise SystemExit(f'no change in {name}')
+              path.write_text(text)
+          PY
+
+          rm .github/workflows/idric-terminology-fix-temp.yml
+          git config user.name 'isomorphisms terminology audit'
+          git config user.email 'isomorphisms@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          git commit -m 'Normalize Idriç backend labels'
+          git push origin HEAD:docs/idric-terminology-audit
