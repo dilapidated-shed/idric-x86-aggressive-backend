@@ -28,7 +28,7 @@ for command in debootstrap mkfs.ext4 python3 "$QEMU" "$CC"; do
     }
 done
 
-"$CC" -std=c11 -Wall -Wextra -Werror -O2 \
+"$CC" -std=c11 -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Werror -O2 \
     "$script_dir/speaker-tone-alsa.c" -lasound -o "$program"
 
 sudo debootstrap \
