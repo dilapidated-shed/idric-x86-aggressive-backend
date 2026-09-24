@@ -8,13 +8,13 @@ COMPLEX_PROJECTIVE_ARTIFACTS ?= $(CURDIR)/build/complex-projective
 
 unit:
 	$(PYTHON) -m unittest discover -s tests -v
-	$(PYTHON) scripts/observe_low_precision.py
+	PYTHONPATH="$(CURDIR)" $(PYTHON) scripts/observe_low_precision.py
 
 low-precision-observe:
 	$(PYTHON) scripts/observe_low_precision.py
 
 e3m2-observe:
-	$(PYTHON) scripts/observe_low_precision.py --format E3M2
+	PYTHONPATH="$(CURDIR)" $(PYTHON) scripts/observe_low_precision.py --format E3M2
 
 ci-unit:
 	EDRIC_COMPILER="$(IDRIC_REPO)/edric" \
