@@ -4,14 +4,17 @@ IDRIC_COMPILER_REF ?= $(shell tr -d '\n' < IDRIC_COMPILER_REF)
 IDRIC_COMPLEX_CORPUS ?= $(IDRIC_REPO)/_/fixtures/complex-projective/float32.json
 COMPLEX_PROJECTIVE_ARTIFACTS ?= $(CURDIR)/build/complex-projective
 
-.PHONY: unit ci-unit integration ci e3m2-observe complex-projective complex-projective-thin-debian
+.PHONY: unit ci-unit integration ci low-precision-observe e3m2-observe complex-projective complex-projective-thin-debian
 
 unit:
 	$(PYTHON) -m unittest discover -s tests -v
-	$(PYTHON) scripts/observe_e3m2.py
+	$(PYTHON) scripts/observe_low_precision.py
+
+low-precision-observe:
+	$(PYTHON) scripts/observe_low_precision.py
 
 e3m2-observe:
-	$(PYTHON) scripts/observe_e3m2.py
+	$(PYTHON) scripts/observe_low_precision.py --format E3M2
 
 ci-unit:
 	EDRIC_COMPILER="$(IDRIC_REPO)/edric" \
