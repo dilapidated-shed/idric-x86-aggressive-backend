@@ -42,7 +42,7 @@ compact payload
   -> compact payload
 ```
 
-This first slice implements scalar add, subtract, and multiply. It does not use
+This slice implements scalar add, subtract, multiply, divide, and a square-root observation path. It does not use
 AVX, AVX2, AVX-512, F16C, a C compiler, an assembler, a linker, libc, or a
 runtime floating-point library.
 
@@ -118,3 +118,16 @@ target primitive implemented here.
 - Idris 2 `Bits8`, pinned by the ARM reference notes to commit
   `1c630e67c386629a0fbbc6b78a59176fde7f0a76`:
   https://github.com/idris-lang/Idris2/blob/1c630e67c386629a0fbbc6b78a59176fde7f0a76/libs/prelude/Prelude/Num.idr
+
+
+## Observational E3M2 arithmetic and geometry
+
+`make e3m2-observe` runs the E3M2 direct-machine path and prints reference,
+observed value, and residue for primitive arithmetic, powers, square root, the
+Dakota camber/caster adjustment Jacobian, a planar rotation at the one-turn
+steering-ratio angle, and the two-position caster multiplier.
+
+The residue is data, not a pass/fail threshold. The observer fails only when a
+direct x86-64 candidate cannot execute or does not emit the expected payload.
+Alternative square-root/logarithm/power algorithms are intentionally left as a
+separate experiment rather than defined by this measurement.
