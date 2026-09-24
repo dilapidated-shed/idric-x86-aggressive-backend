@@ -36,7 +36,7 @@ Observed inside the working container:
 | guest-reported L2 | 3 MiB across 3 instances |
 | guest-reported L3 | 32 MiB across 1 instance |
 
-The cache-instance counts and the 5-core/1-thread topology are a **guest presentation**, not evidence for the host package topology. The model/family/stepping and exposed instruction flags are the useful compilation contract; physical contention and cache sharing still require measurements in the running VM.
+The cache-instance counts and the 5-core/1-thread topology are a **guest presentation**, not evidence for the host package topology. CPU0 sysfs even reports its 32 KiB L1 and 1 MiB L2 as shared by guest CPUs 0-1 despite `lscpu` reporting one thread per core; preserve that inconsistency as virtualization evidence rather than "fixing" it into a plausible physical topology. The model/family/stepping and exposed instruction flags are the useful compilation contract; physical contention and cache sharing still require measurements in the running VM. The exact snapshot is retained in `container-target-20260924.md`.
 
 AMD's current EPYC tuning material explicitly gives decimal family/model/stepping 25/17/1 as a Family 19h Model 11h B1 Zen 4 processor identity.
 
