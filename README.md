@@ -15,3 +15,5 @@ The backend follows accepted `Idric` semantics and ARM/Thumb-proven compiler sea
 RefC/C is not a fallback. The first milestone is one direct `.idric` program lowered to an inspectable A64 object/executable with an exact execution oracle.
 
 Tracking issue: [#8](https://github.com/isomorphisms/idric-x86-aggressive-backend/issues/8).
+
+Concrete Allwinner A333 / sun65iw1p1 processor notes and the physical-measurement checklist live in [`MICROARCHITECTURE.md`](MICROARCHITECTURE.md). Keep SoC facts separate from generic A64 configuration possibilities.
