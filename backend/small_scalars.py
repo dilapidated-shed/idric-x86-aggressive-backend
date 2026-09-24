@@ -347,6 +347,12 @@ class X86Scalar:
     def mulss(self, destination: int, source: int) -> None:
         self.emit(b"\xf3\x0f\x59" + bytes([0xC0 | (destination << 3) | source]))
 
+    def divss(self, destination: int, source: int) -> None:
+        self.emit(b"\xf3\x0f\x5e" + bytes([0xC0 | (destination << 3) | source]))
+
+    def sqrtss(self, destination: int, source: int) -> None:
+        self.emit(b"\xf3\x0f\x51" + bytes([0xC0 | (destination << 3) | source]))
+
     def movd_eax_xmm0(self) -> None:
         self.emit(b"\x66\x0f\x7e\xc0")
 
@@ -521,7 +527,7 @@ def _emit_write_result(machine: X86Scalar, size: int) -> None:
 def build_float_binary_elf(fmt: SignedFloatFormat, left_payload: int, right_payload: int,
                            operation: str, *, saturating: bool | None = None) -> bytes:
     """Build a direct ELF that decodes, computes with scalar SSE, and re-quantizes."""
-    if operation not in {"add", "sub", "mul"}:
+    if operation not in {"add", "sub", "mul", "div"}:
         raise ValueError(f"unsupported scalar float operation {operation}")
     if fmt.name in {"OFP8 E4M3", "OFP8 E5M2"} and saturating is None:
         raise ScalarDomainError(f"{fmt.name} arithmetic requires explicit saturating mode")
@@ -530,7 +536,25 @@ def build_float_binary_elf(fmt: SignedFloatFormat, left_payload: int, right_payl
     machine.data_bytes(table, _decode_table(fmt))
     _emit_decode(machine, table, left_payload, 0)
     _emit_decode(machine, table, right_payload, 1)
-    {"add": machine.addss, "sub": machine.subss, "mul": machine.mulss}[operation](0, 1)
+    {"add": machine.addss, "sub": machine.subss, "mul": machine.mulss,
+     "div": machine.divss}[operation](0, 1)
+    _emit_quantize(machine, fmt, saturating=saturating)
+    _emit_write_result(machine, 2 if fmt is FLOAT16 else 1)
+    return write_elf(machine.finish())
+
+
+def build_float_unary_elf(fmt: SignedFloatFormat, payload: int, operation: str,
+                          *, saturating: bool | None = None) -> bytes:
+    """Build a direct ELF for one unary Float32-carried compact operation."""
+    if operation != "sqrt":
+        raise ValueError(f"unsupported scalar float unary operation {operation}")
+    if fmt.name in {"OFP8 E4M3", "OFP8 E5M2"} and saturating is None:
+        raise ScalarDomainError(f"{fmt.name} arithmetic requires explicit saturating mode")
+    table = fmt.name.lower().replace(" ", "_") + "_decode"
+    machine = X86Scalar()
+    machine.data_bytes(table, _decode_table(fmt))
+    _emit_decode(machine, table, payload, 0)
+    machine.sqrtss(0, 0)
     _emit_quantize(machine, fmt, saturating=saturating)
     _emit_write_result(machine, 2 if fmt is FLOAT16 else 1)
     return write_elf(machine.finish())
