@@ -11,7 +11,7 @@ unit:
 	PYTHONPATH="$(CURDIR)" $(PYTHON) scripts/observe_low_precision.py
 
 low-precision-observe:
-	$(PYTHON) scripts/observe_low_precision.py
+	PYTHONPATH="$(CURDIR)" $(PYTHON) scripts/observe_low_precision.py
 
 e3m2-observe:
 	PYTHONPATH="$(CURDIR)" $(PYTHON) scripts/observe_low_precision.py --format E3M2
