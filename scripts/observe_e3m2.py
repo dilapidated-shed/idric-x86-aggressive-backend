@@ -11,21 +11,47 @@ from backend.small_scalars import E3M2, build_float_binary_elf, build_float_unar
 
 
 
+SUPERSCRIPT = str.maketrans("0123456789-", "⁰¹²³⁴⁵⁶⁷⁸⁹⁻")
+SUBSCRIPT = str.maketrans("0123456789", "₀₁₂₃₄₅₆₇₈₉")
+
+COMMON_VULGAR = {
+    (1, 2): "½",
+    (1, 4): "¼",
+    (3, 4): "¾",
+    (1, 8): "⅛",
+    (3, 8): "⅜",
+    (5, 8): "⅝",
+    (7, 8): "⅞",
+}
+
+
+def vulgar(fraction: Fraction) -> str:
+    if fraction.denominator == 1:
+        return str(fraction.numerator)
+    negative = fraction.numerator < 0
+    numerator = abs(fraction.numerator)
+    key = (numerator, fraction.denominator)
+    body = COMMON_VULGAR.get(key)
+    if body is None:
+        body = (
+            str(numerator).translate(SUPERSCRIPT)
+            + "⁄"
+            + str(fraction.denominator).translate(SUBSCRIPT)
+        )
+    return ("−" if negative else "") + body
+
+
 def dyadic(value: float) -> str:
     fraction = Fraction(value).limit_denominator(16)
     if float(fraction) != value:
         return f"{value:.6f}"
-    if fraction.denominator == 1:
-        return str(fraction.numerator)
-    return f"{fraction.numerator}/{fraction.denominator}"
+    return vulgar(fraction)
 
 
 def reference_text(value: float) -> str:
     fraction = Fraction(value).limit_denominator(16)
     if abs(float(fraction) - value) < 1e-12:
-        if fraction.denominator == 1:
-            return str(fraction.numerator)
-        return f"{fraction.numerator}/{fraction.denominator}"
+        return vulgar(fraction)
     return f"{value:.6f}"
 
 
