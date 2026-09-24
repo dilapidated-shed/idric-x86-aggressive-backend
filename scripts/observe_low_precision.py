@@ -246,7 +246,7 @@ def observe(fmt: Format) -> None:
     print(f"theta={math.degrees(theta):.9f} deg  "
           f"sin={math.sin(theta):.9f}  cos={math.cos(theta):.9f}  "
           f"caster_multiplier={caster_multiplier:.9f}")
-    print("All five formats receive the same numerical inputs.")
+    print("All five formats receive the same source numerical inputs before quantization.")
     print("The numeric residue is observed - reference; it is reported, not graded.")
     print()
     print(f"{'case':31} {'payload':>8} {'reference':>12} {'observed':>12} {'residue':>12}")
