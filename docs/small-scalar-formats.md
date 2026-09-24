@@ -124,10 +124,16 @@ target primitive implemented here.
 
 `make e3m2-observe` runs the E3M2 direct-machine path and prints reference,
 observed value, and residue for primitive arithmetic, powers, square root, the
-Dakota camber/caster adjustment Jacobian, a planar rotation at the one-turn
+recovered 14-by-26 Dakota sweep measurement-model Jacobian, a planar rotation at the one-turn
 steering-ratio angle, and the two-position caster multiplier.
 
 The residue is data, not a pass/fail threshold. The observer fails only when a
 direct x86-64 candidate cannot execute or does not emit the expected payload.
 Alternative square-root/logarithm/power algorithms are intentionally left as a
 separate experiment rather than defined by this measurement.
+
+
+The Jacobian observation deliberately quantizes all 364 named partial
+derivatives before executing a 14-by-26 matrix-vector product. At the current
+E3M2 scale, 278 of the 364 matrix entries become zero; that loss is reported as
+part of the measurement rather than treated as a test failure.
