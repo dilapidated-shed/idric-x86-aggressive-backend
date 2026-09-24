@@ -120,20 +120,19 @@ target primitive implemented here.
   https://github.com/idris-lang/Idris2/blob/1c630e67c386629a0fbbc6b78a59176fde7f0a76/libs/prelude/Prelude/Num.idr
 
 
-## Observational E3M2 arithmetic and geometry
+## Observational narrow-float arithmetic and geometry
 
-`make e3m2-observe` runs the E3M2 direct-machine path and prints reference,
-observed value, and residue for primitive arithmetic, powers, square root, the
-recovered 14-by-26 Dakota sweep measurement-model Jacobian, a planar rotation at the one-turn
-steering-ratio angle, and the two-position caster multiplier.
+`make low-precision-observe` runs one numerical observation suite over
+Float16, E4M3, E5M2, E3M2, and E5M3. It reports reference, observed value, and
+residue for primitive arithmetic, powers, square root, the 14-by-26 Dakota
+Jacobian-vector product, planar rotation, and the two-position caster
+multiplier. Residue is data, not a pass/fail threshold.
 
-The residue is data, not a pass/fail threshold. The observer fails only when a
-direct x86-64 candidate cannot execute or does not emit the expected payload.
-Alternative square-root/logarithm/power algorithms are intentionally left as a
-separate experiment rather than defined by this measurement.
+Every format receives the same source numerical fixture. The established E3M2
+Jacobian/direction payloads are decoded once and those numerical values are
+encoded independently into each format before arithmetic. E5M3 remains a
+storage format: the suite uses a test-only decode/Float32-operation/encode path
+for representable positive cases and reports the zero/negative Jacobian cases
+as outside its published domain.
 
-
-The Jacobian observation deliberately quantizes all 364 named partial
-derivatives before executing a 14-by-26 matrix-vector product. At the current
-E3M2 scale, 278 of the 364 matrix entries become zero; that loss is reported as
-part of the measurement rather than treated as a test failure.
+`make e3m2-observe` remains as a filtered view of the same suite.
