@@ -36,22 +36,41 @@ git -C .idric checkout Idriç
 make ci
 ```
 
-`make ci` runs 44 tests with no skips, compiles all eight real `.idric`
+`make ci` runs 54 tests with no skips, compiles all eight real `.idric`
 fixtures, regenerates every artifact and executable byte-for-byte, validates
 ELF64 with `file` and `readelf`, disassembles the emitted bytes with `objdump`,
 runs each executable natively, and compares exact stdout and exit status.
 Evidence is retained under `build/checked-x86/<fixture>/`.
 
+## Compact scalar target primitives
+
+[`backend/small_scalars.py`](backend/small_scalars.py) adds direct x86-64 scalar
+target support for the five compact-format specification families documented by
+the ARM Thumb work: Float16, OCP FP8 (E4M3 and E5M2), OCP E3M2,
+Ootomo-Naruse E5M3, and Idris 2 Bits8. Float16/OFP8/E3M2 widen one value at a
+time to scalar Float32 SSE arithmetic and round back immediately; E5M3 remains
+storage-only; Bits8 uses scalar general-purpose-register operations.
+
+This is target primitive evidence, not a claim that the current compiler-owned
+one-step handoff already exposes those operations from ordinary `.idric`
+source. See [`docs/small-scalar-formats.md`](docs/small-scalar-formats.md) for
+the exact format and evidence boundary.
+
 ## Find the implementation
 
 - [`backend/idric_x86.py`](backend/idric_x86.py): checked artifact parsing,
   scalar proof/planning, lowering, and concrete x86-64 encoding
+- [`backend/small_scalars.py`](backend/small_scalars.py): compact scalar target
+  primitives and direct x86-64 acceptance-image generation
 - [`backend/elf64.py`](backend/elf64.py): deterministic in-process ELF64 writer
 - [`fixtures/PrintX.idric`](fixtures/PrintX.idric): canonical acceptance source
 - [`scripts/run_checked_integration.sh`](scripts/run_checked_integration.sh):
   real compiler/ELF/native acceptance
 - [`docs/checked-x86-baseline.md`](docs/checked-x86-baseline.md): exact supported
-  surface, process convention, inspection evidence, and stack reconciliation
+  compiler handoff surface, process convention, inspection evidence, and stack
+  reconciliation
+- [`docs/small-scalar-formats.md`](docs/small-scalar-formats.md): Float16,
+  FP8, E3M2, E5M3, and Bits8 target semantics and native evidence boundary
 
 Top-level symbolic links expose the same implementation and acceptance files
 without moving the preserved PR work.
