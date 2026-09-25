@@ -359,6 +359,9 @@ class X86Scalar:
     def movd_xmm0_eax(self) -> None:
         self.emit(b"\x66\x0f\x6e\xc0")
 
+    def movd_xmm_eax(self, destination: int) -> None:
+        self.emit(b"\x66\x0f\x6e" + bytes([0xC0 | (destination << 3)]))
+
     def comiss_0_1(self) -> None:
         self.emit(b"\x0f\x2f\xc1")
 
@@ -557,6 +560,48 @@ def build_float_unary_elf(fmt: SignedFloatFormat, payload: int, operation: str,
     machine.sqrtss(0, 0)
     _emit_quantize(machine, fmt, saturating=saturating)
     _emit_write_result(machine, 2 if fmt is FLOAT16 else 1)
+    return write_elf(machine.finish())
+
+
+def _emit_e5m3_decode(machine: X86Scalar, payload: int, xmm: int) -> None:
+    """Decode one Ootomo-Naruse E5M3 storage byte to its Float32 midpoint."""
+    machine.mov_eax(payload & 0xFF)
+    machine.emit(b"\xc1\xe0\x14")                   # shl eax, 20
+    machine.emit(b"\x05\x00\x00\x08\x38")       # add eax, 0x38080000
+    machine.movd_xmm_eax(xmm)
+
+
+def _emit_e5m3_encode(machine: X86Scalar) -> None:
+    """Encode positive-normal Float32 in xmm0 with the published storage map."""
+    machine.movd_eax_xmm0()
+    machine.emit(b"\x2d\x00\x00\x00\x38")       # sub eax, 0x38000000
+    machine.emit(b"\xc1\xe8\x14")                   # shr eax, 20
+    machine.emit(b"\x25\xff\x00\x00\x00")       # and eax, 0xff
+
+
+def build_e5m3_binary_elf(left_payload: int, right_payload: int, operation: str) -> bytes:
+    """Test-only E5M3 observation: decode, one Float32 operation, then encode."""
+    if operation not in {"add", "sub", "mul", "div"}:
+        raise ValueError(f"unsupported E5M3 observation operation {operation}")
+    machine = X86Scalar()
+    _emit_e5m3_decode(machine, left_payload, 0)
+    _emit_e5m3_decode(machine, right_payload, 1)
+    {"add": machine.addss, "sub": machine.subss, "mul": machine.mulss,
+     "div": machine.divss}[operation](0, 1)
+    _emit_e5m3_encode(machine)
+    _emit_write_result(machine, 1)
+    return write_elf(machine.finish())
+
+
+def build_e5m3_unary_elf(payload: int, operation: str) -> bytes:
+    """Test-only unary E5M3 observation; this is not a language arithmetic primitive."""
+    if operation != "sqrt":
+        raise ValueError(f"unsupported E5M3 observation operation {operation}")
+    machine = X86Scalar()
+    _emit_e5m3_decode(machine, payload, 0)
+    machine.sqrtss(0, 0)
+    _emit_e5m3_encode(machine)
+    _emit_write_result(machine, 1)
     return write_elf(machine.finish())
 
 
